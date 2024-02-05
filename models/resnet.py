@@ -335,7 +335,7 @@ class ResNet(nn.Module):
         self.layer4 = self._make_layer(block, int(8 * scale), num_blocks[3], HW=4, stride=2)
         self.linear = nn.Linear(int(8 * scale) * block.expansion, nclass)
 
-        self.multi_out = 0
+        self.multi_out = 1 #NOTE for logits + fv?
         #self.proto_layer = kwargs['proto_layer']
         #self.proto_pool = kwargs['proto_pool']
         #self.proto_norm = kwargs['proto_norm']
