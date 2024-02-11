@@ -3,8 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 import torch.nn.functional as F
-import numpy as np
-import matplotlib.pyplot as plt
 from Scripts import *
 from data import *
 from models import *
