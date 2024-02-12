@@ -1,23 +1,27 @@
+import os, sys
+sys.path.append('./models')
+sys.path.append('../MLResearch')
+#os.chdir('../MLResearch')
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 import torch.nn.functional as F
 from Scripts import *
-from data import *
 from models import *
+from resnet import *
 from datetime import datetime
 from functions import *
-import pickle
 import argparse
 import json
-import os
+
 
 def main():
+    print("Running main function...")
+    execution_id = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    execution_id = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    os.makedirs(f'../data/{execution_id}', exist_ok=True)
+    os.makedirs(f'./results/{execution_id}', exist_ok=True)
 
     parser = argparse.ArgumentParser()
 
@@ -35,6 +39,7 @@ def main():
     args = parser.parse_args()
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  
+
     model = get_model(args).to(device)
 
     data = {
@@ -43,7 +48,7 @@ def main():
         'cosine_similarity': None
     }
 
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    optimizer = optim.SGD(model.parameters(), lr=0.001)
     cost = nn.CrossEntropyLoss()
 
     if args.train:
@@ -67,36 +72,42 @@ def main():
 
 
 def get_model(args):
-    if args == 'resnet18':
+ 
+    if args.model == 'resnet18':
         model = ResNet18(args.nclass, scale=64, channels=1, proto_layer=4,layer_norm = False, entry_stride = 1)
-    elif args == 'resnet34':
+    elif args.model == 'resnet34':
         raise ValueError('Model not implemented yet')
         #model = ResNet34()
-    elif args == 'resnet50':
+    elif args.model == 'resnet50':
         raise ValueError('Model not implemented yet')
         #model = ResNet50()
-    elif args == 'resnet101':
+    elif args.model == 'resnet101':
         raise ValueError('Model not implemented yet')
         #model = ResNet101()
-    elif args == 'resnet152':
+    elif args.model == 'resnet152':
         raise ValueError('Model not implemented yet')
         #model = ResNet152()
-    elif args == 'densenet':
+    elif args.model == 'densenet':
         raise ValueError('Model not implemented yet')
         #model = DenseNet()
     else:
-        raise ValueError('Model not implemented yet')
+        raise ValueError('Unrecognized model not implemented yet')
     return model
 
 def get_dataset(args):
     if args == 'cifar10':
-        dataset = datasets.CIFAR10(root='data', train=True, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.CIFAR10(root='./Notebooks/data', train=True, transform=transforms.ToTensor(), download=True)
     elif args == 'cifar100':
-        dataset = datasets.CIFAR100(root='data', train=True, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.CIFAR100(root='./Notebooks/data', train=True, transform=transforms.ToTensor(), download=True)
     elif args == 'mnist':
-        dataset = datasets.MNIST(root='data', train=True, transform=transforms.ToTensor(), download=True)
+
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.5,), (0.5,))
+        ])
+        dataset = datasets.MNIST(root='./Notebooks/data', train=True, transform=transform, download=True)
     elif args == 'fashion_mnist':
-        dataset = datasets.FashionMNIST(root='data', train=True, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=True, transform=transforms.ToTensor(), download=True)
     else:
         raise ValueError('Dataset not recognized')
     return dataset
@@ -105,14 +116,13 @@ def get_dataset(args):
 ##TODO add args for optimizer and loss function
 
 
-def save_results(data, execution_id, train, train_dataset=None, num_epochs=None):
-
+def save_results(data, execution_id, train=False, train_dataset=None, num_epochs=None):
     if train:
-        torch.save(data['trained_network'], f'../data/{execution_id}/model_{train_dataset}_epoch_{num_epochs+1}.pth')
+        print("train=True")
+        torch.save(data['trained_network'], f'./results/{execution_id}/model_{train_dataset}_epoch_{num_epochs}.pth')
 
     del data['trained_network']
-    
-    with open(f'../data/{execution_id}/results.json', 'w') as file:
+    with open(f'./results/{execution_id}/results.json', 'w') as file:
         json.dump(data, file)
 
 

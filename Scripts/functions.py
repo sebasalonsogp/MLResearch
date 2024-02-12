@@ -7,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pickle
 
-def train(model,train_loader, cost, optimizer, num_epochs,device):
+def train(model,train_loader, cost, optimizer, num_epochs, device):
+    # print(model,train_loader, cost, optimizer, num_epochs, device)
+    print("Training the model...")
     
     total_step = len(train_loader)
    
@@ -19,7 +21,7 @@ def train(model,train_loader, cost, optimizer, num_epochs,device):
             labels = labels.to(device)
 
             ## forward pass ##
-            outputs = model(images)
+            _,outputs = model(images)
             loss = cost(outputs, labels)
 
             ## backwards pass and optimizer step (learning) ##
@@ -34,9 +36,10 @@ def train(model,train_loader, cost, optimizer, num_epochs,device):
 
 
 def cos_sim(model, dataset_loader, dataset_name, num_epochs, device, execution_id):
+    print("Calculating cosine similarity...")
     
     model.eval()
-    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs+1}.pth'))
+    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
     model.to(device)
 
     class_similarities = {}
@@ -81,8 +84,9 @@ def cos_sim(model, dataset_loader, dataset_name, num_epochs, device, execution_i
     
 
 def eval(model, test_dataloader, dataset_name, num_epochs, device, execution_id):
+    print("Evaluating the model...")
     model.eval()
-    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs+1}.pth'))
+    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
     model.to(device)
     with torch.no_grad():
         feature_vectors, labels_list = [], []
