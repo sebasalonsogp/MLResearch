@@ -66,7 +66,7 @@ class DenseNet(nn.Module):
         self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(num_planes, nclass)
 
-        self.multi_out=0
+        self.multi_out=1 ##TODO: had to activate this for my code to work?
 
     def _make_dense_layers(self, block, in_planes, nblock):
         layers = []

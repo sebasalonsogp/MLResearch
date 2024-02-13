@@ -1,0 +1,2 @@
+execution_id=$(python ./Scripts/script.py --model resnet18 --train --nclass 10 --train_dataset mnist --num_epochs 10)
+python ./Scripts/script.py --model resnet18 --cos_sim --load_model --evaluate_dataset mnist --num_epochs 10 --execution_id "$execution_id" --nclass 10 --desc "Testing bash script"

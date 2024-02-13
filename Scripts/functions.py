@@ -5,7 +5,8 @@ from torchvision import datasets, transforms
 import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
+from matplotlib import cm
+
 
 def train(model,train_loader, cost, optimizer, num_epochs, device):
     print("Training the model...")
@@ -34,12 +35,12 @@ def train(model,train_loader, cost, optimizer, num_epochs, device):
     return model.state_dict()    
 
 
-def cos_sim(model, dataset_loader, dataset_name, num_epochs, device, execution_id):
+def cos_sim(model, dataset_loader, device):
     print("Calculating cosine similarity...")
 
-    model.eval()
-    model.load_state_dict(torch.load(f'../results/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
-    model.to(device)
+    # model.eval()
+    # model.load_state_dict(torch.load(f'../results/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
+    # model.to(device)
 
     class_similarities = {}
 
@@ -143,13 +144,13 @@ def plot_hist(cos_sim_matrix_np):
         fig.suptitle(f"Cosine Similarity for Class: {class_id}")
 
         # Intra-class similarity
-        axs[0].hist(cos_sim_matrix_np[class_id]['intra_sim'], bins=50, color='blue', edgecolor='black', alpha=0.5,histype='point')
+        axs[0].hist(cos_sim_matrix_np[class_id]['intra_sim'], bins=50, color='blue', edgecolor='black', alpha=0.5, histtype='step')
         axs[0].set_title(f"Intra-class similarity")
         axs[0].set_xlabel("cosine similarity")
         axs[0].set_ylabel("Frequency")
 
         # Inter-class similarity
-        axs[1].hist(cos_sim_matrix_np[class_id]['inter_sim'], bins=50, color='red', edgecolor='black', alpha=0.5)
+        axs[1].hist(cos_sim_matrix_np[class_id]['inter_sim'], bins=50, color='red', edgecolor='black', alpha=0.5,histtype='step')
         axs[1].set_title(f"Inter-class similarity")
         axs[1].set_xlabel("cosine similarity")
         axs[1].set_ylabel("Frequency")
@@ -172,3 +173,34 @@ def plot_scatter(cos_sim_matrix_np, sample_size=1000):
         ax.legend()
         plt.show()
 
+def aggregated_hist(cos_sim_matrix_np,histtype='step'):
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+    fig.suptitle("Aggregated Cosine Similarity Histogram")
+
+    # Intra-class similarity
+    #all_intra_sim = np.array([sim for class_id in cos_sim_matrix_np for sim in cos_sim_matrix_np[class_id]['intra_sim']])
+    colors_intra = cm.get_cmap('Blues', len(cos_sim_matrix_np))
+    for i, class_id in enumerate(cos_sim_matrix_np):
+        axs[0].hist(cos_sim_matrix_np[class_id]['intra_sim'], bins=50, color=colors_intra(i), edgecolor='black', alpha=0.5, histtype=histtype, label=f"Class {class_id}")
+    axs[0].set_title(f"Intra-class similarity")
+    axs[0].set_xlabel("cosine similarity")
+    axs[0].set_ylabel("Frequency")
+    axs[0].legend()
+
+    # Inter-class similarity
+    #all_inter_sim = np.array([sim for class_id in cos_sim_matrix_np for sim in cos_sim_matrix_np[class_id]['inter_sim']])
+    colors_inter = cm.get_cmap('Reds', len(cos_sim_matrix_np))
+    for j, class_id in enumerate(cos_sim_matrix_np):
+        axs[1].hist(cos_sim_matrix_np[class_id]['inter_sim'], bins=50, color=colors_inter(j), edgecolor='black', alpha=0.5, histtype='step', label=f"Class {class_id}")
+    axs[1].set_title(f"Inter-class similarity")
+    axs[1].set_xlabel("cosine similarity")
+    axs[1].set_ylabel("Frequency")
+    axs[1].legend()
+
+    # Show the figure
+    plt.show()
+    
+
+def print_res(cos_sim_matrix_np):
+    for class_id in cos_sim_matrix_np:
+        print(f"Class {class_id}:\nIntra-class Similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['intra_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['intra_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['intra_sim'])}\nInter-class similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['inter_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['inter_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['inter_sim'])}\n")
