@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import pickle
 
 def train(model,train_loader, cost, optimizer, num_epochs, device):
-    # print(model,train_loader, cost, optimizer, num_epochs, device)
     print("Training the model...")
     
     total_step = len(train_loader)
@@ -37,9 +36,9 @@ def train(model,train_loader, cost, optimizer, num_epochs, device):
 
 def cos_sim(model, dataset_loader, dataset_name, num_epochs, device, execution_id):
     print("Calculating cosine similarity...")
-    
+
     model.eval()
-    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
+    model.load_state_dict(torch.load(f'../results/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
     model.to(device)
 
     class_similarities = {}
@@ -76,10 +75,6 @@ def cos_sim(model, dataset_loader, dataset_name, num_epochs, device, execution_i
 
                         class_similarities[class_id_i]['inter_sim'].append(sim.item())
                         class_similarities[class_id_j]['inter_sim'].append(sim.item())
-
-    # with open(f'model_{dataset_name}_epoch{num_epochs+1}_cos_sim', 'wb') as handle:
-    #     pickle.dump(class_similarities, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
     return class_similarities
     
 
