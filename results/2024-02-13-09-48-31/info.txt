@@ -1,0 +1,5 @@
+Performing new computation on 2024-02-13 10:01:53.929150
+Execution ID: 2024-02-13-09-48-31
+Description: train resnet on fshn
+Finished computing on: 2024-02-13 10:01:53.929150
+
