@@ -69,7 +69,7 @@ def main():
             nchannels = 3
         elif args.train_dataset == 'cifar100':
             nclass = 100
-            nchannels
+            nchannels = 3
         else:
             raise ValueError("Dataset not recognized, couldnt determine number of classes or channels. Please specify nclass or nchannels.")
     model = get_model(args, nclass,nchannels)
