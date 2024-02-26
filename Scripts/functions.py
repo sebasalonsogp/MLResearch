@@ -179,7 +179,7 @@ def cos_sim_adj(model=None, cs_dataloader=None, device=None):
 
             for i in range(len(feat_vec)):
                 for j in range(i+1, len(feat_vec)):
-                    
+                
                     sim = F.cosine_similarity(feat_vec[i].unsqueeze(0)-μ.unsqueeze(0), feat_vec[j].unsqueeze(0)-μ.unsqueeze(0)) ## calculate cosine similarity between feature vectors and convert it to a scalar
 
                     if labels[i] == labels[j]:   #within class

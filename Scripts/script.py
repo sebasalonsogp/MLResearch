@@ -98,7 +98,7 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-
+        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
         try:
             test_dataset, batch_size = get_dataset(args.test_dataset)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
@@ -117,7 +117,7 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        
+        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
         try:
             cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
             cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=batch_size, shuffle=False)
@@ -136,7 +136,7 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        
+        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
         try:
             adj_cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
             adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=adj_cos_sim_dataset, batch_size=batch_size, shuffle=False)
@@ -154,7 +154,7 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        
+        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
         try:
             l2_dataset, batch_size = get_dataset(args.cs_dataset)
             l2_loader = torch.utils.data.DataLoader(dataset=l2_dataset, batch_size=batch_size, shuffle=False)
