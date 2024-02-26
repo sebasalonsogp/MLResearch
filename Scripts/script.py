@@ -228,7 +228,7 @@ def save_results(data, args, result_path, execution_id):
             if args.l2:
                 file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
-        file.write()
+        file.write('n')
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
