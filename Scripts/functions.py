@@ -64,7 +64,7 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
             actual_epoch = epoch
             best_model = model.state_dict()
         
-    return best_model, actual_epoch   
+    return best_model, actual_epoch+1 
 
 
 def cos_sim(model=None, cs_dataloader=None, device=None):
@@ -119,6 +119,138 @@ def cos_sim(model=None, cs_dataloader=None, device=None):
 
     return class_similarities
     
+
+def get_fv_μ(model=None, cs_dataloader=None, device=None):
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif cs_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+    
+    print("Computing adjusted cosine similarity...")
+
+    model.to(device)
+    model.eval()
+
+    fv_sum ,cnt= None,0
+
+    with torch.no_grad():
+        for inputs, labels in cs_dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            feat_vec, _ = model(inputs)
+
+            if fv_sum is None:
+                fv_sum = torch.zeros_like(feat_vec)
+            
+            fv_sum += feat_vec.sum(dim=0)
+            cnt+=feat_vec.size(0)
+    μ = fv_sum/cnt
+    return F.normalize(μ,dim=0)
+
+def cos_sim_adj(model=None, cs_dataloader=None, device=None):
+
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif cs_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+    μ = get_fv_μ(model, cs_dataloader, device)
+    if μ is None:
+        raise ValueError("μ is not defined")
+    
+
+    print("Computing adjusted cosine similarity...")
+
+    model.to(device)
+    model.eval()
+
+    class_similarities = {}
+
+    with torch.no_grad():
+        for inputs, labels in cs_dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            feat_vec, _ = model(inputs)  ## get feature vectors from the model
+
+            for i in range(len(feat_vec)):
+                for j in range(i+1, len(feat_vec)):
+                    
+                    sim = F.cosine_similarity(feat_vec[i].unsqueeze(0)-μ.unsqueeze(0), feat_vec[j].unsqueeze(0)-μ.unsqueeze(0)) ## calculate cosine similarity between feature vectors and convert it to a scalar
+
+                    if labels[i] == labels[j]:   #within class
+                        
+                        class_id = labels[i].item()
+
+                        if class_id not in class_similarities:
+                            class_similarities[class_id] = {'intra_sim': [], 'inter_sim': []}
+
+                        class_similarities[class_id]['intra_sim'].append(sim.item())
+                    else: #between class
+
+                        class_id_i, class_id_j = labels[i].item(), labels[j].item()
+
+                        if class_id_i not in class_similarities:
+                            class_similarities[class_id_i] = {'intra_sim': [], 'inter_sim': []}
+
+                        if class_id_j not in class_similarities:
+                            class_similarities[class_id_j] = {'intra_sim': [], 'inter_sim': []}
+                            
+                        class_similarities[class_id_i]['inter_sim'].append(sim.item())
+                        class_similarities[class_id_j]['inter_sim'].append(sim.item())
+
+    return class_similarities
+
+def l2_dist(model=None, cs_dataloader=None, device=None):
+
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif cs_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+    
+    print("Computing L2 distance...")
+
+    model.to(device)
+    model.eval()
+
+    class_distances = {}
+    with torch.no_grad():
+        for inputs, labels in cs_dataloader:
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+
+            feat_vec, _ = model(inputs)  # get feature vectors from the model
+
+            for i in range(len(feat_vec)):
+                for j in range(i + 1, len(feat_vec)):
+
+                    dist = torch.norm(feat_vec[i] - feat_vec[j], p=2)  # compute L2 distance
+
+                    if labels[i] == labels[j]:  # within class
+                        class_id = labels[i].item()
+                        if class_id not in class_distances:
+                            class_distances[class_id] = {'intra_dist': [], 'inter_dist': []}
+                        class_distances[class_id]['intra_dist'].append(dist.item())
+
+                    else:  # between class
+                        class_id_i, class_id_j = labels[i].item(), labels[j].item()
+
+                        if class_id_i not in class_distances:
+                            class_distances[class_id_i] = {'intra_dist': [], 'inter_dist': []}
+
+                        if class_id_j not in class_distances:
+                            class_distances[class_id_j] = {'intra_dist': [], 'inter_dist': []}
+
+                        class_distances[class_id_i]['inter_dist'].append(dist.item())
+                        class_distances[class_id_j]['inter_dist'].append(dist.item())
+
+    return class_distances
 
 def eval(model=None, eval_dataloader=None, device=None):
         
@@ -251,137 +383,6 @@ def aggregated_hist(cos_sim_matrix_np,histtype='step'):
     # Show the figure
     plt.show()
 
-
-def get_fv_μ(model=None, cs_dataloader=None, device=None):
-    if model is None:
-        raise ValueError("Model is not defined")
-    elif cs_dataloader is None:
-        raise ValueError("Dataset is not defined")
-    elif device is None:
-        raise ValueError("Device is not defined")
-    
-    print("Computing adjusted cosine similarity...")
-
-    model.to(device)
-    model.eval()
-
-    fv_sum ,cnt= None,0
-
-    with torch.no_grad():
-        for inputs, labels in cs_dataloader:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            feat_vec, _ = model(inputs)
-
-            if fv_sum is None:
-                fv_sum = torch.zeros_like(feat_vec)
-            
-            fv_sum += feat_vec.sum(dim=0)
-            cnt+=feat_vec.size(0)
-    μ = fv_sum/cnt
-    return F.normalize(μ,dim=0)
-
-def cos_sim_adj(model=None, cs_dataloader=None, device=None):
-
-    if model is None:
-        raise ValueError("Model is not defined")
-    elif cs_dataloader is None:
-        raise ValueError("Dataset is not defined")
-    elif device is None:
-        raise ValueError("Device is not defined")
-    μ = get_fv_μ(model, cs_dataloader, device)
-    if μ is None:
-        raise ValueError("μ is not defined")
-    
-
-    print("Computing adjusted cosine similarity...")
-
-    model.to(device)
-    model.eval()
-
-    class_similarities = {}
-
-    with torch.no_grad():
-        for inputs, labels in cs_dataloader:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            feat_vec, _ = model(inputs)  ## get feature vectors from the model
-
-            for i in range(len(feat_vec)):
-                for j in range(i+1, len(feat_vec)):
-                    sim = F.cosine_similarity(feat_vec[i].unsqueeze(0)-μ, feat_vec[j].unsqueeze(0)-μ) ## calculate cosine similarity between feature vectors
-
-                    if labels[i] == labels[j]:   #within class
-                        
-                        class_id = labels[i].item()
-
-                        if class_id not in class_similarities:
-                            class_similarities[class_id] = {'intra_sim': [], 'inter_sim': []}
-
-                        class_similarities[class_id]['intra_sim'].append(sim.item())
-                    else: #between class
-
-                        class_id_i, class_id_j = labels[i].item(), labels[j].item()
-
-                        if class_id_i not in class_similarities:
-                            class_similarities[class_id_i] = {'intra_sim': [], 'inter_sim': []}
-
-                        if class_id_j not in class_similarities:
-                            class_similarities[class_id_j] = {'intra_sim': [], 'inter_sim': []}
-                            
-                        class_similarities[class_id_i]['inter_sim'].append(sim.item())
-                        class_similarities[class_id_j]['inter_sim'].append(sim.item())
-
-    return class_similarities
-
-def l2_dist(model=None, cs_dataloader=None, device=None):
-
-    if model is None:
-        raise ValueError("Model is not defined")
-    elif cs_dataloader is None:
-        raise ValueError("Dataset is not defined")
-    elif device is None:
-        raise ValueError("Device is not defined")
-    
-    print("Computing L2 distance...")
-
-    model.to(device)
-    model.eval()
-
-    class_distances = {}
-    with torch.no_grad():
-        for inputs, labels in cs_dataloader:
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            feat_vec, _ = model(inputs)  # get feature vectors from the model
-
-            for i in range(len(feat_vec)):
-                for j in range(i + 1, len(feat_vec)):
-
-                    dist = torch.norm(feat_vec[i] - feat_vec[j], p=2)  # compute L2 distance
-
-                    if labels[i] == labels[j]:  # within class
-                        class_id = labels[i].item()
-                        if class_id not in class_distances:
-                            class_distances[class_id] = {'intra_dist': [], 'inter_dist': []}
-                        class_distances[class_id]['intra_dist'].append(dist.item())
-
-                    else:  # between class
-                        class_id_i, class_id_j = labels[i].item(), labels[j].item()
-
-                        if class_id_i not in class_distances:
-                            class_distances[class_id_i] = {'intra_dist': [], 'inter_dist': []}
-
-                        if class_id_j not in class_distances:
-                            class_distances[class_id_j] = {'intra_dist': [], 'inter_dist': []}
-
-                        class_distances[class_id_i]['inter_dist'].append(dist.item())
-                        class_distances[class_id_j]['inter_dist'].append(dist.item())
-
-    return class_distances
 
 def print_res(cos_sim_matrix_np):
     for class_id in cos_sim_matrix_np:

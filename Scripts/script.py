@@ -142,12 +142,12 @@ def main():
         
         try:
             adj_cos_sim_dataset = get_dataset(args.cs_dataset)
-            adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
+            adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=adj_cos_sim_dataset, batch_size=64, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load adj_cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
         
-        data['adj_cos_sim'] = cos_sim_adj(model=model,cs_dataloader=adj_cos_sim_loader, device=device, mean_adj=True)
+        data['adj_cos_sim'] = cos_sim_adj(model=model,cs_dataloader=adj_cos_sim_loader, device=device)
 
     if args.l2:
         try:
@@ -171,7 +171,7 @@ def main():
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
+    data['End Time'], data['Elapsed Time'] = end_time, str(elapsed_time)
 
     save_results(data, args, result_path, execution_id)
 
@@ -196,7 +196,7 @@ def save_results(data, args, result_path, execution_id):
         if file.tell():
                 file.write("\n")
 
-        file.write(f' ------------------------------------------------ Performing new computation on {datetime.now()} --------------------------------------------------------\n')
+        file.write(f'------------------------------------------------ Performing new computation on {datetime.now()} --------------------------------------------------------\n')
         file.write(f'\nExecution ID: {execution_id}\n')
         
         if args.desc:

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch import linalg as LA
 
 import math
-from scipy.special import binom
+#from scipy.special import binom
 
 
 class LSoftmaxLinear(nn.Module):
