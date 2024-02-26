@@ -59,15 +59,20 @@ def main():
         'L2_distance': None
     }
 
-    nclass = None
+    nclass,nchannels = None,None
     if args.train_dataset:
-        if args.train_dataset == 'cifar10' or args.train_dataset == 'mnist' or args.train_dataset == 'fashion_mnist':
+        if args.train_dataset == 'mnist' or args.train_dataset == 'fashion_mnist':
             nclass = 10
+            nchannels = 1
+        elif args.train_dataset == 'cifar10':
+            nclass = 10
+            nchannels = 3
         elif args.train_dataset == 'cifar100':
             nclass = 100
+            nchannels
         else:
-            raise ValueError("Dataset not recognized, couldnt determine number of classes. Please specify nclass.")
-    model = get_model(args, nclass)
+            raise ValueError("Dataset not recognized, couldnt determine number of classes or channels. Please specify nclass or nchannels.")
+    model = get_model(args, nclass,nchannels)
     
 
     if args.train:
@@ -223,6 +228,7 @@ def save_results(data, args, result_path, execution_id):
             if args.l2:
                 file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
+        file.write()
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
@@ -230,9 +236,9 @@ def save_results(data, args, result_path, execution_id):
 
     return None
 
-def get_model(args,nclass):
+def get_model(args,nclass,channels):
     if args.model == 'resnet18':
-        model = ResNet18(nclass, scale=64, channels=1, proto_layer=4,layer_norm = False, entry_stride = 1)
+        model = ResNet18(nclass, scale=64, channels=channels, proto_layer=4,layer_norm = False, entry_stride = 1)
     elif args.model == 'resnet34':
         raise ValueError('Model not implemented yet')
         #model = ResNet34()
