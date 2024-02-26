@@ -167,8 +167,8 @@ def main():
     
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    data['End Time'], data['Elapsed Time'] = end_time, str(elapsed_time)
+    elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
+    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
     save_results(data, args, accuracy=accuracy, result_path=result_path, execution_id=execution_id)
 
@@ -178,7 +178,7 @@ def main():
     return execution_id
 
 
-def save_results(data, args, result_path=None, execution_id=None, accuracy=None):
+def save_results(data, args, elapsed_time=elapsed_time,result_path=None, execution_id=None, accuracy=None):
     print("Saving results...")
     
     if data:
@@ -219,7 +219,7 @@ def save_results(data, args, result_path=None, execution_id=None, accuracy=None)
             if args.l2:
                 file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
-        file.write('\n')
+        file.write(f'\nTotal elapsed time: {elapsed_time}')
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
