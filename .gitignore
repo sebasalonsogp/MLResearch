@@ -2,3 +2,4 @@ models/__pycache__
 Notebooks/data/
 Scripts/__pycache__/
 nohup.out
+results/
