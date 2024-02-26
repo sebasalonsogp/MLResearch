@@ -197,12 +197,12 @@ def save_results(data, args, result_path, execution_id):
                 file.write("\n")
 
         file.write(f'------------------------------------------------ Performing new computation on {datetime.now()} --------------------------------------------------------\n')
-        file.write(f'\nExecution ID: {execution_id}\n')
+        file.write(f'\nExecution ID: {execution_id}')
         
         if args.desc:
-            file.write(f'\nDescription: {args.desc}\n')
+            file.write(f'\nDescription: {args.desc}\n\n')
         else:
-            file.write(f'\nDescription: No description provided\n')
+            file.write(f'\nDescription: No description provided\n\n')
 
         if args:
             args_dict = vars(args)
@@ -210,7 +210,7 @@ def save_results(data, args, result_path, execution_id):
                 file.write(f'{arg}: {args_dict[arg]}\n')
         
         if args.model and args.train_dataset:
-            file.write(f"Used model {args.model} with dataset {args.train_dataset}.\n")
+            file.write(f"\nUsed model {args.model} with dataset {args.train_dataset}.\n")
             if args.train:
                 file.write(f"Trained model for {args.num_epochs} epochs.\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
