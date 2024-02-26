@@ -13,7 +13,7 @@ from datetime import datetime
 
 
 def main():
-
+    ##TODO write test function
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model', type=str, required=True, help='Specify the model.')
