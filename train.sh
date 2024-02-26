@@ -7,7 +7,7 @@ python Scripts/script.py --cuda --model resnet18 --train --train_dataset mnist -
 python Scripts/script.py --cuda --model resnet18 --train --train_dataset fashion_mnist --test --test_dataset fashion_mnist --cos_sim --cs_dataset fashion_mnist --num_epochs 20 --desc "train on fashion_mnist"
 #python Scripts/script.py --execution_id "$ed2" --cuda --model resnet18 --train_dataset fashion_mnist  --cos_sim --cs_dataset mnist --desc "load fashion_mnist resnet18, compute cos_sim on mnist"
 
-python Scripts/script.py --cuda --model resnet18 --train --train_dataset cifar10 --test --test_dataset cifar10 --cos_sim --cs_dataset cifar10 --num_epochs 85 --desc "train on cifar10"
+python Scripts/script.py --cuda --model resnet18 --train --train_dataset cifar10 --test --test_dataset cifar10 --cos_sim --cs_dataset cifar10 --num_epochs 90 --desc "train on cifar10"
 #python Scripts/script.py --execution_id "$ed3" --cuda --model resnet18 --train_dataset cifar10  --cos_sim --cs_dataset cifar100 --desc "load cifar10 resnet18, compute cos_sim on cifar100"
 
 python Scripts/script.py --cuda --model resnet18 --train --train_dataset cifar100 --test --test_dataset cifar100 --cos_sim --cs_dataset cifar100 --num_epochs 160 --desc "train on cifar100"
