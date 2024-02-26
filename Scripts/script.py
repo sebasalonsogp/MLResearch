@@ -48,6 +48,7 @@ def main():
     os.makedirs(result_path, exist_ok=True)
 
     logging.basicConfig(filename=f'{result_path}/error.log', level=logging.ERROR,format='%(asctime)s:%(levelname)s:%(message)s')
+
     
     data = {
         'Execution_ID': execution_id,
@@ -59,19 +60,8 @@ def main():
         'L2_distance': None
     }
 
-    nclass,nchannels = None,None
-    if args.train_dataset:
-        if args.train_dataset == 'mnist' or args.train_dataset == 'fashion_mnist':
-            nclass = 10
-            nchannels = 1
-        elif args.train_dataset == 'cifar10':
-            nclass = 10
-            nchannels = 3
-        elif args.train_dataset == 'cifar100':
-            nclass = 100
-            nchannels = 3
-        else:
-            raise ValueError("Dataset not recognized, couldnt determine number of classes or channels. Please specify nclass or nchannels.")
+    nclass,nchannels = get_model_params(args.train_dataset)
+
     model = get_model(args, nclass,nchannels)
     
 
@@ -86,8 +76,8 @@ def main():
         cost = nn.CrossEntropyLoss()
 
         try:
-            train_dataset = get_dataset(args.train_dataset)
-            train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
+            train_dataset, batch_size = get_dataset(args.train_dataset)
+            train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         except ValueError as e:
             logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
@@ -96,6 +86,8 @@ def main():
         args.num_epochs = actual_epochs
 
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+    
+    accuracy = None
 
     if args.test:
         
@@ -108,8 +100,8 @@ def main():
             raise e("Model not found")
 
         try:
-            test_dataset = get_dataset(args.test_dataset)
-            test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=64, shuffle=False)
+            test_dataset, batch_size = get_dataset(args.test_dataset)
+            test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
@@ -127,8 +119,8 @@ def main():
             raise e("Model not found")
         
         try:
-            cos_sim_dataset = get_dataset(args.cs_dataset)
-            cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
+            cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
+            cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
@@ -146,8 +138,8 @@ def main():
             raise e("Model not found")
         
         try:
-            adj_cos_sim_dataset = get_dataset(args.cs_dataset)
-            adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=adj_cos_sim_dataset, batch_size=64, shuffle=False)
+            adj_cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
+            adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=adj_cos_sim_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load adj_cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
@@ -164,8 +156,8 @@ def main():
             raise e("Model not found")
         
         try:
-            l2_dataset = get_dataset(args.cs_dataset)
-            l2_loader = torch.utils.data.DataLoader(dataset=l2_dataset, batch_size=64, shuffle=False)
+            l2_dataset, batch_size = get_dataset(args.cs_dataset)
+            l2_loader = torch.utils.data.DataLoader(dataset=l2_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load l2 dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
@@ -175,10 +167,10 @@ def main():
     
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
-    data['End Time'], data['Elapsed Time'] = end_time, str(elapsed_time)
+    elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
+    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
-    save_results(data, args, result_path, execution_id)
+    save_results(data, args, accuracy=accuracy, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
@@ -186,8 +178,7 @@ def main():
     return execution_id
 
 
-
-def save_results(data, args, result_path, execution_id):
+def save_results(data, args, elapsed_time=elapsed_time,result_path=None, execution_id=None, accuracy=None):
     print("Saving results...")
     
     if data:
@@ -220,7 +211,7 @@ def save_results(data, args, result_path, execution_id):
                 file.write(f"Trained model for {args.num_epochs} epochs.\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
             if args.test:
-                file.write(f"Tested model on dataset {args.test_dataset}.\n")
+                file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}.\n")
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
             if args.cos_sim_adj:
@@ -228,7 +219,7 @@ def save_results(data, args, result_path, execution_id):
             if args.l2:
                 file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
-        file.write('n')
+        file.write(f'\nTotal elapsed time: {elapsed_time}')
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
@@ -259,27 +250,46 @@ def get_model(args,nclass,channels):
     return model
 
 def get_dataset(args):
+    batch_size = None
     if args == 'cifar10':
+        batch_size = 128
         dataset = datasets.CIFAR10(root='./Notebooks/data', train=True, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
                                                                                                       transforms.Normalize((.5071,.4865,.4409), (.2675,.2565,.2761))]), download=True)
     elif args == 'cifar100':
+        batch_size = 128
         dataset = datasets.CIFAR100(root='./Notebooks/data', train=True, transform=transforms.Compose([transforms.RandomCrop(32, padding=4),
                                                                                                        transforms.RandomHorizontalFlip(),
                                                                                                        transforms.ToTensor(),
                                                                                                        transforms.Normalize((0.5071, 0.4865, 0.4409), (0.2675, 0.2565, 0.2761))]),
                                                                                                        download=True)
     elif args == 'mnist':
-
+        batch_size = 64
         transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
         dataset = datasets.MNIST(root='./Notebooks/data', train=True, transform=transform, download=True)
     elif args == 'fashion_mnist':
+        batch_size = 64
         dataset = datasets.FashionMNIST(root='./Notebooks/data', train=True, transform=transforms.ToTensor(), download=True)
     else:
         raise ValueError('Dataset not recognized')
-    return dataset
+    return dataset, batch_size
+
+
+def get_model_params(arg=None):
+    if arg == 'mnist' or arg == 'fashion_mnist':
+        nclass = 10
+        nchannels = 1
+    elif arg == 'cifar10':
+        nclass = 10
+        nchannels = 3
+    elif arg == 'cifar100':
+        nclass = 100
+        nchannels = 3
+    else:
+        raise ValueError("Dataset not recognized, couldnt determine number of classes or channels. Please specify nclass or nchannels.")
+    return nclass, nchannels
 
 ##TODO add args for optimizer and loss function
 
