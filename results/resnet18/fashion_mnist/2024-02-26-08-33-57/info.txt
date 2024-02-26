@@ -1,0 +1,27 @@
+------------------------------------------------ Performing new computation on 2024-02-26 08:46:05.082386 --------------------------------------------------------
+
+Execution ID: 2024-02-26-08-33-57
+Description: train on fashion_mnist
+
+model: resnet18
+test: True
+test_dataset: fashion_mnist
+cos_sim: True
+cs_dataset: fashion_mnist
+train: True
+train_dataset: fashion_mnist
+num_epochs: 20
+desc: train on fashion_mnist
+execution_id: None
+cuda: True
+l2: False
+cos_sim_adj: False
+
+Used model resnet18 with dataset fashion_mnist.
+Trained model for 20 epochs.
+Saved Model: model_resnet18_fashion_mnist_id_2024-02-26-08-33-57
+Tested model on dataset fashion_mnist.
+Calculated cosine similarity on dataset fashion_mnist.
+n
+------------------------------------------------ Finished computing on: 2024-02-26 08:46:05.082499 -----------------------------------------------------------------
+

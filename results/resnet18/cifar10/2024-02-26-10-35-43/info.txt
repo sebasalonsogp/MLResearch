@@ -1,0 +1,27 @@
+------------------------------------------------ Performing new computation on 2024-02-26 11:19:00.304683 --------------------------------------------------------
+
+Execution ID: 2024-02-26-10-35-43
+Description: train on cifar10
+
+model: resnet18
+test: True
+test_dataset: cifar10
+cos_sim: True
+cs_dataset: cifar10
+train: True
+train_dataset: cifar10
+num_epochs: 88
+desc: train on cifar10
+execution_id: None
+cuda: True
+l2: False
+cos_sim_adj: False
+
+Used model resnet18 with dataset cifar10.
+Trained model for 88 epochs.
+Saved Model: model_resnet18_cifar10_id_2024-02-26-10-35-43
+Tested model on dataset cifar10.
+Calculated cosine similarity on dataset cifar10.
+n
+------------------------------------------------ Finished computing on: 2024-02-26 11:19:00.304715 -----------------------------------------------------------------
+
