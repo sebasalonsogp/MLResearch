@@ -48,6 +48,7 @@ def main():
     os.makedirs(result_path, exist_ok=True)
 
     logging.basicConfig(filename=f'{result_path}/error.log', level=logging.ERROR,format='%(asctime)s:%(levelname)s:%(message)s')
+
     
     data = {
         'Execution_ID': execution_id,
@@ -228,7 +229,7 @@ def save_results(data, args, result_path, execution_id):
             if args.l2:
                 file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
-        file.write('n')
+        file.write('\n')
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
