@@ -170,7 +170,7 @@ def main():
     elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
     data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
-    save_results(data, args, accuracy=accuracy, result_path=result_path, execution_id=execution_id)
+    save_results(data, args, accuracy=accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
@@ -244,7 +244,7 @@ def get_model(args,nclass,channels):
         #model = ResNet152()
     elif args.model == 'densenet':
         #raise ValueError('Model not implemented yet')
-        model = DenseNetCifar(nclass, scale=32, channels=3, proto_layer=4, layer_norm = False, entry_stride = 1)
+        model = DenseNetCifar(nclass, scale=32, channels=channels, proto_layer=4, layer_norm = False, entry_stride = 1)
     else:
         raise ValueError('Unrecognized model not implemented yet')
     return model
