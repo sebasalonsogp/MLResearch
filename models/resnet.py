@@ -402,7 +402,7 @@ class ResNetLargeMargin(nn.Module):
         self.entry = kwargs['entry_stride']
         self.device = device
         #self.drp = drp
-        print (self.in_planes)
+        #print (self.in_planes)
 
         if bn:
             if self.entry == 1:

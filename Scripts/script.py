@@ -1,97 +1,191 @@
-import os, sys
-sys.path.append('./models')
-sys.path.append('../MLResearch')
-#os.chdir('../MLResearch')
+import os,sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from Scripts import *
-from models import *
-from resnet import *
-from densenet import *
-from datetime import datetime,date
-from functions import *
-import argparse
-import json
+from Scripts.functions import train, cos_sim, eval
+from models.resnet import *
+from models.densenet import *
+from datetime import datetime
+import argparse, json, logging
+from datetime import datetime
 
 
 def main():
-    print("Running main function...")
+
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--model', type=str, required=True, help='Specify the model')
-    parser.add_argument('--test', action='store_true',default=False, help='Test the model')
-    parser.add_argument('--cos_sim', action='store_true', default=False,  help='Calculate cosine similarity')
-    parser.add_argument('--load_model', action='store_true', default=False, help='Load a trained model')
-    parser.add_argument('--nclass', type=int, required=False, help='Number of classes in the dataset')
-    parser.add_argument('--train', action='store_true', default=False, help='Train the model')
-    parser.add_argument('--train_dataset', type=str,required=False, help='Specify the training dataset')
-    parser.add_argument('--evaluate_dataset', type=str, required=False, help='Specify the dataset for which the model was trained')
-    parser.add_argument('--test_dataset', type=str, required=False, help='Specify the test dataset')
-    parser.add_argument('--test_model', type=str,required=False, help='Which trained model to load and evaluate')
-    parser.add_argument('--num_epochs', type=int, default=0,required=False, help='Number of epochs model will/was trained')
-
+    parser.add_argument('--model', type=str, required=True, help='Specify the model.')
+    parser.add_argument('--test', action='store_true',default=False, help='Test the model?')
+    parser.add_argument('--test_dataset', type=str, required=False, help='Specify the evaluation dataset (eval or cos_sim)')
+    parser.add_argument('--cos_sim', action='store_true', default=False,  help='Calculate cosine similarity?')
+    parser.add_argument('--cs_dataset', type=str, required=False, help='Specify the dataset for which to compute cosine similarity.')
+    parser.add_argument('--train', action='store_true', default=False, help='Train the model?')
+    parser.add_argument('--train_dataset', type=str,required=True, help='Specify the dataset to train or was trained on.')
+    #parser.add_argument('--nclass', type=int, required=False, help='Number of classes in the model/dataset')
+    parser.add_argument('--num_epochs', type=int, default=None,required=False, help='Number of epochs model will/was trained')
     parser.add_argument('--desc', type=str, required=False, help='Description of the experiment')
     parser.add_argument('--execution_id', type=str, required=False, help='Execution ID of model to load')
-    args = parser.parse_args()
-    
-    execution_id = args.execution_id if args.execution_id else datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    parser.add_argument('--cuda', action='store_true', default=False, help='Require cuda?')
 
-    os.makedirs(f'./results/{execution_id}', exist_ok=True)
+    args = parser.parse_args()
+
+    start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"Started running script at {start_time} ...")
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')  
-    print("Device: ", device)
+    print(f"Device: {device}")
 
+    if args.cuda and device == 'cpu':
+        raise ValueError("CUDA is not available")
+
+    execution_id = args.execution_id if args.execution_id else datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    
+    model_path = f'./results/{args.model}/{args.train_dataset}'
+    result_path = f'{model_path}/{execution_id}'
+    os.makedirs(result_path, exist_ok=True)
+
+    logging.basicConfig(filename=f'{result_path}/error.log', level=logging.ERROR,format='%(asctime)s:%(levelname)s:%(message)s')
+    
     data = {
-        'vectors': [],
-        'cosine_similarity': None,
-        'Execution_ID': execution_id
+        'Execution_ID': execution_id,
+        'Start Time': start_time,
+        'End Time': None,
+        'Elapsed Time': None,
+        'cosine_similarity': None
     }
 
-    if args.train:
+    nclass = None
+    if args.train_dataset:
+        if args.train_dataset == 'cifar10' or args.train_dataset == 'mnist' or args.train_dataset == 'fashion_mnist':
+            nclass = 10
+        elif args.train_dataset == 'cifar100':
+            nclass = 100
+        else:
+            raise ValueError("Dataset not recognized, couldnt determine number of classes. Please specify nclass.")
+    model = get_model(args, nclass)
+    
 
-        model =  get_model(args).to(device) 
+    if args.train:
+        try:
+            os.makedirs(f'./results/{args.model}/{args.train_dataset}', exist_ok=True)
+        except OSError as e:
+            logging.error(f"Failed to create save path for model and dataset. Check if model and dataset are specified correctly. Error: {e}")
+            raise ValueError("Failed to create save path for model and dataset. Check if model and dataset are specified correctly.")
+
         optimizer = optim.SGD(model.parameters(), lr=0.001)
         cost = nn.CrossEntropyLoss()
-        train_dataset = get_dataset(args.train_dataset)
-        train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
-        torch.save(train(model, train_loader, cost, optimizer, args.num_epochs, device), f'./results/{execution_id}/model_{args.model}_{args.train_dataset}_epoch_{args.num_epochs}.pth')
+
+        try:
+            train_dataset = get_dataset(args.train_dataset)
+            train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=64, shuffle=True)
+        except ValueError as e:
+            logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
+            raise e("Dataset not found")
+
+        torch.save(train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device), 
+                   f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
 
     if args.test:
+        
+        try:
+            model.load_state_dict(
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                )
+        except ValueError as e:
+            logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
+            raise e("Model not found")
 
-        model =  get_model(args)
-        model.load_state_dict(torch.load(f'./results/{execution_id}/model_{args.model}_{args.evaluate_dataset}_epoch_{args.num_epochs}.pth'))
-        model.to(device)
-        model.eval()
-        optimizer = optim.SGD(model.parameters(), lr=0.001)
-        cost = nn.CrossEntropyLoss()
+        try:
+            test_dataset = get_dataset(args.test_dataset)
+            test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=64, shuffle=False)
+        except ValueError as e:
+            logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
+            raise e("Dataset not found")
 
-        test_dataset = get_dataset(args.test_dataset)
-        test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=64, shuffle=False)
-
-        data['vectors'].append(eval(model, test_loader, args.test_model, args.num_epochs,device, execution_id))
+        accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
 
     if args.cos_sim:
-        model = get_model(args)
-        model.load_state_dict(torch.load(f'./results/{execution_id}/model_{args.model}_{args.evaluate_dataset}_epoch_{args.num_epochs}.pth'))
-        #model = torch.load(f'./results/{execution_id}/model_{args.model}_{args.evaluate_dataset}_epoch_{args.num_epochs}.pth')
-        model.to(device)
-        model.eval()
+    
+        try:
+            model.load_state_dict(
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                )
+        except ValueError as e:
+            logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
+            raise e("Model not found")
+        
+        try:
+            cos_sim_dataset = get_dataset(args.cs_dataset)
+            cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
+        except ValueError as e:
+            logging.error(f"Failed to load evaluation dataset. Check if dataset is specified correctly. Error: {e}")
+            raise e("Dataset not found")
 
-        cos_sim_dataset = get_dataset(args.evaluate_dataset)
-        cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
+        data['cosine_similarity'] = cos_sim(model=model,cs_dataloader=cos_sim_loader, device=device)    
 
-        data['cosine_similarity'] = cos_sim(model,cos_sim_loader, device)    
 
-    save_results(data, execution_id, args.desc)
+
+    save_results(data, args, result_path, execution_id)
+
+    end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+
+    print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
+
+    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
+
     return execution_id
 
 
-def get_model(args):
- 
+
+def save_results(data, args, result_path, execution_id):
+    print("Saving results...")
+    
+    if data:
+        with open(f'{result_path}/results.json', 'a') as file:
+            if file.tell():
+                file.write(",\n")
+            json.dump(data, file)
+            
+    with open(f'{result_path}/info.txt', 'a') as file:
+        
+        if file.tell():
+                file.write("\n")
+
+        file.write(f'Performing new computation on {datetime.now()}\n')
+        file.write(f'Execution ID: {execution_id}\n')
+        
+        if args:
+            args_dict = vars(args)
+            for arg in args_dict:
+                file.write(f'{arg}: {args_dict[arg]}\n')
+        
+        if args.model and args.train_dataset:
+            file.write(f"Used model {args.model} with dataset {args.train_dataset}.")
+            if args.train:
+                file.write(f"Trained model for {args.num_epochs} epochs.\n")
+                file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
+            if args.test:
+                file.write(f"Tested model on dataset {args.test_dataset}.\n")
+            if args.cos_sim:
+                file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
+            
+        if args.desc:
+            file.write(f'Description: {args.desc}\n')
+        else:
+            file.write(f'Description: No description provided\n')
+
+        file.write(f'Finished computing on: {datetime.now()}\n\n')
+
+    print("Results saved")
+
+    return None
+
+def get_model(args,nclass):
     if args.model == 'resnet18':
-        model = ResNet18(args.nclass, scale=64, channels=1, proto_layer=4,layer_norm = False, entry_stride = 1)
+        model = ResNet18(nclass, scale=64, channels=1, proto_layer=4,layer_norm = False, entry_stride = 1)
     elif args.model == 'resnet34':
         raise ValueError('Model not implemented yet')
         #model = ResNet34()
@@ -106,7 +200,7 @@ def get_model(args):
         #model = ResNet152()
     elif args.model == 'densenet':
         #raise ValueError('Model not implemented yet')
-        model = DenseNetCifar(args.nclass, scale=32, channels=3, proto_layer=4, layer_norm = False, entry_stride = 1)
+        model = DenseNetCifar(nclass, scale=32, channels=3, proto_layer=4, layer_norm = False, entry_stride = 1)
     else:
         raise ValueError('Unrecognized model not implemented yet')
     return model
@@ -134,30 +228,7 @@ def get_dataset(args):
         raise ValueError('Dataset not recognized')
     return dataset
 
-
 ##TODO add args for optimizer and loss function
-
-
-def save_results(data, execution_id, description=None):
-    if data:
-        with open(f'./results/{execution_id}/results.json', 'a') as file:
-            if file.tell():
-                file.write(",\n")
-            json.dump(data, file)
-            
-    with open(f'./results/{execution_id}/info.txt', 'a') as file:
-        file.write(f'Performing new computation on {datetime.now()}\n')
-        file.write(f'Execution ID: {execution_id}\n')
-        if description:
-            file.write(f'Description: {description}\n')
-        else:
-            file.write(f'Description: No description provided\n')
-        file.write(f'Finished computing on: {datetime.now()}\n\n')
-
-    print("Results saved")
-
-
 
 if __name__ == '__main__':
     main()
-

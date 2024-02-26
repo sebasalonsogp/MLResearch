@@ -8,9 +8,26 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
-def train(model,train_loader, cost, optimizer, num_epochs, device):
+def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=None, device=None):
+
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif train_loader is None:
+        raise ValueError("Dataset is not defined")
+    elif cost is None:
+        raise ValueError("Cost function is not defined")
+    elif optimizer is None:
+        raise ValueError("Optimizer is not defined")
+    elif num_epochs is None:
+        raise ValueError("Number of epochs is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+
+
     print("Training the model...")
     
+    model = model.to(device)
+
     total_step = len(train_loader)
    
     for epoch in range(num_epochs):
@@ -35,17 +52,25 @@ def train(model,train_loader, cost, optimizer, num_epochs, device):
     return model.state_dict()    
 
 
-def cos_sim(model, dataset_loader, device):
-    print("Calculating cosine similarity...")
+def cos_sim(model=None, cs_dataloader=None, device=None):
 
-    # model.eval()
-    # model.load_state_dict(torch.load(f'../results/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
-    # model.to(device)
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif cs_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+
+
+    print("Computing cosine similarity...")
+
+    model.to(device)
+    model.eval()
 
     class_similarities = {}
 
     with torch.no_grad():
-        for inputs, labels in dataset_loader:
+        for inputs, labels in cs_dataloader:
             inputs = inputs.to(device)
             labels = labels.to(device)
 
@@ -57,13 +82,15 @@ def cos_sim(model, dataset_loader, device):
                     sim = F.cosine_similarity(feat_vec[i].unsqueeze(0), feat_vec[j].unsqueeze(0)) ## calculate cosine similarity between feature vectors
 
                     if labels[i] == labels[j]:   #within class
+                        
                         class_id = labels[i].item()
 
                         if class_id not in class_similarities:
                             class_similarities[class_id] = {'intra_sim': [], 'inter_sim': []}
 
                         class_similarities[class_id]['intra_sim'].append(sim.item())
-                    else:                           #between class
+                    else: #between class
+
                         class_id_i, class_id_j = labels[i].item(), labels[j].item()
 
                         if class_id_i not in class_similarities:
@@ -72,22 +99,31 @@ def cos_sim(model, dataset_loader, device):
                         if class_id_j not in class_similarities:
                             class_similarities[class_id_j] = {'intra_sim': [], 'inter_sim': []}
                             
-                        
-
                         class_similarities[class_id_i]['inter_sim'].append(sim.item())
                         class_similarities[class_id_j]['inter_sim'].append(sim.item())
+
     return class_similarities
     
 
-def eval(model, test_dataloader, dataset_name, num_epochs, device, execution_id):
-    print("Evaluating the model...")
+def eval(model=None, eval_dataloader=None, device=None):
+        
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif eval_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+
+
+    print(f"Evaluating the model...")
+
     model.eval()
-    model.load_state_dict(torch.load(f'../data/{execution_id}/model_{dataset_name}_epoch_{num_epochs}.pth'))
     model.to(device)
     with torch.no_grad():
+
         feature_vectors, labels_list = [], []
         correct, total = 0,0
-        for images, labels in test_dataloader:
+        for images, labels in eval_dataloader:
 
             images = images.to(device) #images
             labels = labels.to(device) #true labels
@@ -107,7 +143,7 @@ def eval(model, test_dataloader, dataset_name, num_epochs, device, execution_id)
         print('Feature Vectors:', feature_vectors)
         #print('Labels:', labels_list)
 
-        return feature_vectors
+        return accuracy
     
 
 def plot_line_graph(cos_sim_matrix_np,sample_size=1000):
