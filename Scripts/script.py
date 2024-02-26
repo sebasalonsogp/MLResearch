@@ -23,7 +23,6 @@ def main():
     parser.add_argument('--cs_dataset', type=str, required=False, help='Specify the dataset for which to compute cosine similarity.')
     parser.add_argument('--train', action='store_true', default=False, help='Train the model?')
     parser.add_argument('--train_dataset', type=str,required=True, help='Specify the dataset to train or was trained on.')
-    #parser.add_argument('--nclass', type=int, required=False, help='Number of classes in the model/dataset')
     parser.add_argument('--num_epochs', type=int, default=None,required=False, help='Number of epochs model will/was trained')
     parser.add_argument('--desc', type=str, required=False, help='Description of the experiment')
     parser.add_argument('--execution_id', type=str, required=False, help='Execution ID of model to load')
@@ -83,9 +82,11 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
+        
+        computed_model, actual_epochs = train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
+        args.num_epochs = actual_epochs
 
-        torch.save(train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device), 
-                   f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
 
     if args.test:
         
@@ -127,15 +128,17 @@ def main():
 
 
 
-    save_results(data, args, result_path, execution_id)
+    
 
     end_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
+
+    save_results(data, args, result_path, execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
-    data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
-
+    
     return execution_id
 
 
@@ -154,16 +157,21 @@ def save_results(data, args, result_path, execution_id):
         if file.tell():
                 file.write("\n")
 
-        file.write(f'Performing new computation on {datetime.now()}\n')
-        file.write(f'Execution ID: {execution_id}\n')
+        file.write(f' ------------------------------------------------ Performing new computation on {datetime.now()} --------------------------------------------------------\n')
+        file.write(f'\nExecution ID: {execution_id}\n')
         
+        if args.desc:
+            file.write(f'\nDescription: {args.desc}\n')
+        else:
+            file.write(f'\nDescription: No description provided\n')
+
         if args:
             args_dict = vars(args)
             for arg in args_dict:
                 file.write(f'{arg}: {args_dict[arg]}\n')
         
         if args.model and args.train_dataset:
-            file.write(f"Used model {args.model} with dataset {args.train_dataset}.")
+            file.write(f"Used model {args.model} with dataset {args.train_dataset}.\n")
             if args.train:
                 file.write(f"Trained model for {args.num_epochs} epochs.\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
@@ -172,12 +180,8 @@ def save_results(data, args, result_path, execution_id):
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
             
-        if args.desc:
-            file.write(f'Description: {args.desc}\n')
-        else:
-            file.write(f'Description: No description provided\n')
-
-        file.write(f'Finished computing on: {datetime.now()}\n\n')
+        
+        file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
 
     print("Results saved")
 

@@ -301,7 +301,7 @@ class ResNet(nn.Module):
         self.ln = kwargs['layer_norm']
         self.entry = kwargs['entry_stride']
         #self.drp = drp
-        print (self.in_planes)
+        #print (self.in_planes)
 
 
 

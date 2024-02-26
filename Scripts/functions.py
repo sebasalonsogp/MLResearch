@@ -29,10 +29,16 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
     model = model.to(device)
 
     total_step = len(train_loader)
-   
-    for epoch in range(num_epochs):
 
+    lowest_loss = float('inf')
+    best_model = None
+    actual_epoch = num_epochs
+
+    for epoch in range(num_epochs):
+        curr_loss = 0.0
         for i, (images, labels) in enumerate(train_loader):
+            
+            
 
             images = images.to(device)
             labels = labels.to(device)
@@ -45,11 +51,20 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
             optimizer.zero_grad()  # zeroes out the gradients, removing exisitng ones to avoid accumulation
             loss.backward()  # gradient of loss, how much each parameter contributed to the loss
             optimizer.step()  # adjusts parameters based on results to minimize loss
+            
+            curr_loss += loss.item()
 
             if (i + 1) % 100 == 0:
                 print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
+
+        avg_loss = curr_loss / len(train_loader)        
+        if avg_loss < lowest_loss:
+            print(f"Loss decreased from {lowest_loss} to {avg_loss}. Saving the current best model...")
+            lowest_loss = avg_loss
+            actual_epoch = epoch
+            best_model = model.state_dict()
         
-    return model.state_dict()    
+    return best_model, actual_epoch   
 
 
 def cos_sim(model=None, cs_dataloader=None, device=None):
@@ -235,6 +250,21 @@ def aggregated_hist(cos_sim_matrix_np,histtype='step'):
 
     # Show the figure
     plt.show()
+
+
+def adjusted_cos_sim(model=None, cs_dataloader=None, device=None):
+    if model is None:
+        raise ValueError("Model is not defined")
+    elif cs_dataloader is None:
+        raise ValueError("Dataset is not defined")
+    elif device is None:
+        raise ValueError("Device is not defined")
+    
+    print("Computing adjusted cosine similarity...")
+
+    model.to(device)
+    model.eval()
+
     
 
 def print_res(cos_sim_matrix_np):
