@@ -143,12 +143,14 @@ def get_fv_μ(model=None, cs_dataloader=None, device=None):
             feat_vec, _ = model(inputs)
 
             if fv_sum is None:
-                fv_sum = torch.zeros_like(feat_vec)
-            
-            fv_sum += feat_vec.sum(dim=0)
+                fv_sum = torch.zeros(feat_vec.shape[1],device=device)
+
+            fv_sum += torch.sum(feat_vec, dim=0)
+            print(f'fv_sum {fv_sum.shape}')
             cnt+=feat_vec.size(0)
+
     μ = fv_sum/cnt
-    return F.normalize(μ,dim=0)
+    return μ
 
 def cos_sim_adj(model=None, cs_dataloader=None, device=None):
 
@@ -161,7 +163,7 @@ def cos_sim_adj(model=None, cs_dataloader=None, device=None):
     μ = get_fv_μ(model, cs_dataloader, device)
     if μ is None:
         raise ValueError("μ is not defined")
-    
+    print(f'Mu shape: {μ.shape}')
 
     print("Computing adjusted cosine similarity...")
 
@@ -181,6 +183,7 @@ def cos_sim_adj(model=None, cs_dataloader=None, device=None):
                 for j in range(i+1, len(feat_vec)):
                 
                     sim = F.cosine_similarity(feat_vec[i].unsqueeze(0)-μ.unsqueeze(0), feat_vec[j].unsqueeze(0)-μ.unsqueeze(0)) ## calculate cosine similarity between feature vectors and convert it to a scalar
+                    print(f"Sim_Shape: {sim.shape}")
 
                     if labels[i] == labels[j]:   #within class
                         
