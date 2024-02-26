@@ -178,7 +178,7 @@ def main():
     return execution_id
 
 
-def save_results(data, args, elapsed_time=elapsed_time,result_path=None, execution_id=None, accuracy=None):
+def save_results(data, args, elapsed_time=None,result_path=None, execution_id=None, accuracy=None):
     print("Saving results...")
     
     if data:
