@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
-from Scripts.functions import train, cos_sim, eval
+from Scripts.functions import train, cos_sim, eval,cos_sim_adj, l2_dist
 from models.resnet import *
 from models.densenet import *
 from datetime import datetime
@@ -27,6 +27,8 @@ def main():
     parser.add_argument('--desc', type=str, required=False, help='Description of the experiment')
     parser.add_argument('--execution_id', type=str, required=False, help='Execution ID of model to load')
     parser.add_argument('--cuda', action='store_true', default=False, help='Require cuda?')
+    parser.add_argument('--l2', action='store_true', default=False, help='Compute L2 distance?')
+    parser.add_argument('--cos_sim_adj', action='store_true', default=False, help='Compute mean-adjusted cosine similarity?')
 
     args = parser.parse_args()
 
@@ -52,7 +54,9 @@ def main():
         'Start Time': start_time,
         'End Time': None,
         'Elapsed Time': None,
-        'cosine_similarity': None
+        'cosine_similarity': None,
+        'adj_cos_sim': None,
+        'L2_distance': None
     }
 
     nclass = None
@@ -121,12 +125,47 @@ def main():
             cos_sim_dataset = get_dataset(args.cs_dataset)
             cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
         except ValueError as e:
-            logging.error(f"Failed to load evaluation dataset. Check if dataset is specified correctly. Error: {e}")
+            logging.error(f"Failed to load cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
 
         data['cosine_similarity'] = cos_sim(model=model,cs_dataloader=cos_sim_loader, device=device)    
 
 
+    if args.cos_sim_adj:
+        try:
+            model.load_state_dict(
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                )
+        except ValueError as e:
+            logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
+            raise e("Model not found")
+        
+        try:
+            adj_cos_sim_dataset = get_dataset(args.cs_dataset)
+            adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=64, shuffle=False)
+        except ValueError as e:
+            logging.error(f"Failed to load adj_cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
+            raise e("Dataset not found")
+        
+        data['adj_cos_sim'] = cos_sim_adj(model=model,cs_dataloader=adj_cos_sim_loader, device=device, mean_adj=True)
+
+    if args.l2:
+        try:
+            model.load_state_dict(
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                )
+        except ValueError as e:
+            logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
+            raise e("Model not found")
+        
+        try:
+            l2_dataset = get_dataset(args.cs_dataset)
+            l2_loader = torch.utils.data.DataLoader(dataset=l2_dataset, batch_size=64, shuffle=False)
+        except ValueError as e:
+            logging.error(f"Failed to load l2 dataset. Check if dataset is specified correctly. Error: {e}")
+            raise e("Dataset not found")
+        
+        data['L2_distance'] = l2_dist(model=model,cs_dataloader=l2_loader, device=device)
 
     
 
@@ -179,6 +218,10 @@ def save_results(data, args, result_path, execution_id):
                 file.write(f"Tested model on dataset {args.test_dataset}.\n")
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
+            if args.cos_sim_adj:
+                file.write(f"Calculated mean-adjusted cosine similarity on dataset {args.cs_dataset}.\n")
+            if args.l2:
+                file.write(f"Calculated L2 distance on dataset {args.cs_dataset}.\n")
             
         
         file.write(f'\n------------------------------------------------ Finished computing on: {datetime.now()} -----------------------------------------------------------------\n\n')
