@@ -97,6 +97,8 @@ def main():
         args.num_epochs = actual_epochs
 
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+    
+    accuracy = None
 
     if args.test:
         
@@ -179,7 +181,7 @@ def main():
     elapsed_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
     data['End Time'], data['Elapsed Time'] = end_time, str(elapsed_time)
 
-    save_results(data, args, result_path, execution_id)
+    save_results(data, args, accuracy=accuracy, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
@@ -188,7 +190,7 @@ def main():
 
 
 
-def save_results(data, args, result_path, execution_id):
+def save_results(data, args, result_path=None, execution_id=None, accuracy=None):
     print("Saving results...")
     
     if data:
@@ -221,7 +223,7 @@ def save_results(data, args, result_path, execution_id):
                 file.write(f"Trained model for {args.num_epochs} epochs.\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
             if args.test:
-                file.write(f"Tested model on dataset {args.test_dataset}.\n")
+                file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}.\n")
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
             if args.cos_sim_adj:
