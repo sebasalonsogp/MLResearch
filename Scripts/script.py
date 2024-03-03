@@ -92,7 +92,7 @@ def main():
 
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
     
-    accuracy = None
+    training_accuracy,test_accuracy = None, None
 
     if args.test:
         
@@ -111,7 +111,7 @@ def main():
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
 
-        accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
+        test_accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
 
     if args.cos_sim:
     
@@ -175,7 +175,7 @@ def main():
     elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
     data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
-    save_results(data, args, training_settings=training_settings,accuracy=accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
+    save_results(data, args, training_settings=training_settings,training_accuracy=training_accuracy,test_accuracy=test_accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
@@ -183,7 +183,7 @@ def main():
     return execution_id
 
 
-def save_results(data, args,training_settings=None, elapsed_time=None,result_path=None, execution_id=None, accuracy=None):
+def save_results(data, args,training_settings=None, elapsed_time=None,result_path=None, execution_id=None, training_accuracy=None,test_accuracy=None):
     print("Saving results...")
     
     if data:
@@ -215,9 +215,10 @@ def save_results(data, args,training_settings=None, elapsed_time=None,result_pat
             if args.train:
                 formatted_training_settings = json.dumps(training_settings, indent=4)
                 file.write(f"Training settings: {formatted_training_settings}\n")
+                file.write(f"Training accuracy: {training_accuracy:.2f}%\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}\n")
             if args.test:
-                file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}.\n")
+                file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}%.\n")
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
             if args.cos_sim_adj:
