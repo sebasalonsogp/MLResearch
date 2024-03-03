@@ -68,8 +68,6 @@ def main():
     
 
     if args.train:
-
-
         try:
             os.makedirs(f'./results/{args.model}/{args.train_dataset}', exist_ok=True)
         except OSError as e:
@@ -177,7 +175,7 @@ def main():
     elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
     data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
-    save_results(data, args, accuracy=accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
+    save_results(data, args, training_settings=training_settings,accuracy=accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
