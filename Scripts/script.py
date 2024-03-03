@@ -72,7 +72,7 @@ def main():
             logging.error(f"Failed to create save path for model and dataset. Check if model and dataset are specified correctly. Error: {e}")
             raise ValueError("Failed to create save path for model and dataset. Check if model and dataset are specified correctly.")
 
-        optimizer = optim.SGD(model.parameters(), lr=0.001)
+        optimizer = optim.SGD(model.parameters(), lr=0.001,weight_decay=0)
         cost = nn.CrossEntropyLoss()
 
         try:
@@ -85,7 +85,7 @@ def main():
         computed_model, actual_epochs = train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
         args.num_epochs = actual_epochs
 
-        torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
     
     accuracy = None
 
@@ -93,12 +93,12 @@ def main():
         
         try:
             model.load_state_dict(
-                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
             test_dataset, batch_size = get_dataset(args.test_dataset)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
@@ -112,12 +112,12 @@ def main():
     
         try:
             model.load_state_dict(
-                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
             cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
             cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=batch_size, shuffle=False)
@@ -131,12 +131,12 @@ def main():
     if args.cos_sim_adj:
         try:
             model.load_state_dict(
-                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
             adj_cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
             adj_cos_sim_loader = torch.utils.data.DataLoader(dataset=adj_cos_sim_dataset, batch_size=batch_size, shuffle=False)
@@ -149,12 +149,12 @@ def main():
     if args.l2:
         try:
             model.load_state_dict(
-                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+                torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
         except ValueError as e:
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
-        print(f'Loaded model_{args.model}_{args.train_dataset}_id_{execution_id}.pth')
+        print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
             l2_dataset, batch_size = get_dataset(args.cs_dataset)
             l2_loader = torch.utils.data.DataLoader(dataset=l2_dataset, batch_size=batch_size, shuffle=False)
@@ -209,7 +209,7 @@ def save_results(data, args, elapsed_time=None,result_path=None, execution_id=No
             file.write(f"\nUsed model {args.model} with dataset {args.train_dataset}.\n")
             if args.train:
                 file.write(f"Trained model for {args.num_epochs} epochs.\n")
-                file.write(f"Saved Model: model_{args.model}_{args.train_dataset}_id_{execution_id}\n")
+                file.write(f"Saved Model: model_{args.model}_{args.train_dataset}\n")
             if args.test:
                 file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}.\n")
             if args.cos_sim:

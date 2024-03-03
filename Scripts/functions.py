@@ -296,9 +296,9 @@ def eval(model=None, eval_dataloader=None, device=None):
         return accuracy
     
 
-def plot_line_graph(cos_sim_matrix_np,sample_size=1000):
+def plot_line_graph(cos_sim_matrix_np,title="Cosine Similarity Line Graph",sample_size=1000):
     fig, axs = plt.subplots(2, 1, figsize=(12, 12))
-    fig.suptitle("Cosine Similarity Line Graph")
+    fig.suptitle(title)
 
     for class_id in cos_sim_matrix_np:
         
@@ -323,7 +323,7 @@ def plot_line_graph(cos_sim_matrix_np,sample_size=1000):
     plt.show()
 
 
-def plot_hist(cos_sim_matrix_np):
+def plot_hist(cos_sim_matrix_np,title="Cosine Similarity Histogram"):
 
     for class_id in cos_sim_matrix_np:
         fig, axs = plt.subplots(1, 2, figsize=(12, 6))
@@ -359,9 +359,9 @@ def plot_scatter(cos_sim_matrix_np, sample_size=1000):
         ax.legend()
         plt.show()
 
-def aggregated_hist(cos_sim_matrix_np,histtype='step'):
+def aggregated_hist(cos_sim_matrix_np,title="Aggregated Cosine Similarity Histogram",histtype='step'):
     fig, axs = plt.subplots(1, 2, figsize=(12, 6))
-    fig.suptitle("Aggregated Cosine Similarity Histogram")
+    fig.suptitle(title)
 
     # Intra-class similarity
     #all_intra_sim = np.array([sim for class_id in cos_sim_matrix_np for sim in cos_sim_matrix_np[class_id]['intra_sim']])
@@ -387,6 +387,24 @@ def aggregated_hist(cos_sim_matrix_np,histtype='step'):
     plt.show()
 
 
-def print_res(cos_sim_matrix_np):
+def get_stats_class(cos_sim_matrix_np):
     for class_id in cos_sim_matrix_np:
         print(f"Class {class_id}:\nIntra-class Similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['intra_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['intra_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['intra_sim'])}\nInter-class similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['inter_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['inter_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['inter_sim'])}\n")
+
+def get_stats_agg(cos_sim_matrix_np):
+    intra_sim_all = []
+    inter_sim_all = []
+
+    for class_id in cos_sim_matrix_np:
+        intra_sim_all.extend(cos_sim_matrix_np[class_id]['intra_sim'])
+        inter_sim_all.extend(cos_sim_matrix_np[class_id]['inter_sim'])
+
+    mean_intra_sim = np.mean(intra_sim_all)
+    std_intra_sim = np.std(intra_sim_all)
+    var_intra_sim = np.var(intra_sim_all)
+
+    mean_inter_sim = np.mean(inter_sim_all)
+    std_inter_sim = np.std(inter_sim_all)
+    var_inter_sim = np.var(inter_sim_all)
+
+    print(f"Overall Statistics:\nIntra-class Similarity: Mean = {mean_intra_sim}, Std = {std_intra_sim}, Var = {var_intra_sim}\nInter-class similarity: Mean = {mean_inter_sim}, Std = {std_inter_sim}, Var = {var_inter_sim}\n")
