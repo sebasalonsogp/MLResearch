@@ -60,12 +60,16 @@ def main():
         'L2_distance': None
     }
 
+    training_settings = None
+
     nclass,nchannels = get_model_params(args.train_dataset)
 
     model = get_model(args, nclass,nchannels)
     
 
     if args.train:
+
+
         try:
             os.makedirs(f'./results/{args.model}/{args.train_dataset}', exist_ok=True)
         except OSError as e:
@@ -85,6 +89,9 @@ def main():
         computed_model, actual_epochs = train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
         args.num_epochs = actual_epochs
 
+
+        training_settings = {'model': args.model, 'train_dataset': args.train_dataset, 'num_epochs': args.num_epochs, 'optimizer': 'SGD', 'loss_function': 'CrossEntropyLoss', 'learning_rate': 0.001, 'batch_size': batch_size, 'weight_decay': 0, 'entry_stride': 1, 'layer_norm': 'False', 'proto_layer': 4, 'scale': 64 if args.model=='resnet18' else 32, 'channels': '3' if args.train_dataset=='cifar10' or args.train_dataset=='cifar100' else '1'}
+
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
     
     accuracy = None
@@ -95,7 +102,7 @@ def main():
             model.load_state_dict(
                 torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
-        except ValueError as e:
+        except ValueError as e: 
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
@@ -178,7 +185,7 @@ def main():
     return execution_id
 
 
-def save_results(data, args, elapsed_time=None,result_path=None, execution_id=None, accuracy=None):
+def save_results(data, args,training_settings=None, elapsed_time=None,result_path=None, execution_id=None, accuracy=None):
     print("Saving results...")
     
     if data:
@@ -208,7 +215,8 @@ def save_results(data, args, elapsed_time=None,result_path=None, execution_id=No
         if args.model and args.train_dataset:
             file.write(f"\nUsed model {args.model} with dataset {args.train_dataset}.\n")
             if args.train:
-                file.write(f"Trained model for {args.num_epochs} epochs.\n")
+                formatted_training_settings = json.dumps(training_settings, indent=4)
+                file.write(f"Training settings: {formatted_training_settings}\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}\n")
             if args.test:
                 file.write(f"Tested model on dataset {args.test_dataset} with accuracy {accuracy:.2f}.\n")
