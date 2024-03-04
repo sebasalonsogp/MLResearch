@@ -22,4 +22,4 @@ python Scripts/script.py --cuda --model densenet --train --train_dataset cifar10
 #train densenet on fashion_mnist
 python Scripts/script.py --cuda --model densenet --train --train_dataset cifar100 --test --test_dataset cifar100 --cos_sim --cs_dataset cifar100 --num_epochs 200 --desc "train densenet on cifar100" --l2 --cos_sim_adj
 
-echo "All the scripts have been executed"
+echo "All the scripts have been executed"  

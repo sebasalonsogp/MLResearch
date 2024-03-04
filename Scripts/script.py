@@ -49,8 +49,16 @@ def main():
 
     logging.basicConfig(filename=f'{result_path}/error.log', level=logging.ERROR,format='%(asctime)s:%(levelname)s:%(message)s')
 
-    
-    data = {
+
+    if args.execution_id:
+        try:
+            with open(f'{model_path}/{args.execution_id}/results.json', 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError as e:
+            logging.error(f"Failed to load results. Check if execution_id is correct. Error: {e}")
+            raise e("Results not found")
+    else:
+        data = {
         'Execution_ID': execution_id,
         'Start Time': start_time,
         'End Time': None,
@@ -59,6 +67,8 @@ def main():
         'adj_cos_sim': None,
         'L2_distance': None
     }
+
+   
 
     training_settings = None
 
