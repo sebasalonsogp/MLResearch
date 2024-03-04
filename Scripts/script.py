@@ -29,6 +29,7 @@ def main():
     parser.add_argument('--cuda', action='store_true', default=False, help='Require cuda?')
     parser.add_argument('--l2', action='store_true', default=False, help='Compute L2 distance?')
     parser.add_argument('--cos_sim_adj', action='store_true', default=False, help='Compute mean-adjusted cosine similarity?')
+    parser.add_argument('--load_model_train', action='store_true', default=False, help='Load model and continue train?')
 
     args = parser.parse_args()
 
@@ -83,6 +84,16 @@ def main():
         except ValueError as e:
             logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
+        
+        try:
+            if args.load_model_train:
+                model.load_state_dict(
+                    torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
+                    )
+                print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
+        except ValueError as e:
+            logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
+            raise e("Model not found")
         
         computed_model, actual_epochs = train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
         args.num_epochs = actual_epochs
