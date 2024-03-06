@@ -306,6 +306,8 @@ def get_dataset(args,eval_train=False):
     if args == 'cifar10':
         batch_size = 128
         dataset = datasets.CIFAR10(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
+                                                                                                            transforms.RandomHorizontalFlip(),
+                                                                                                            transforms.RandomRotation(15),
                                                                                                       transforms.Normalize((.5071,.4865,.4409), (.2675,.2565,.2761))]), download=True)
     elif args == 'cifar100':
         batch_size = 128
@@ -323,7 +325,7 @@ def get_dataset(args,eval_train=False):
         dataset = datasets.MNIST(root='./Notebooks/data', train=eval_train, transform=transform, download=True)
     elif args == 'fashion_mnist':
         batch_size = 64
-        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=eval_train, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([transforms.RandomHorizontalFlip(),transforms.ToTensor()]), download=True)
     else:
         raise ValueError('Dataset not recognized')
     return dataset, batch_size
