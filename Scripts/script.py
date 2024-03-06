@@ -94,8 +94,10 @@ def main():
         try:
             train_dataset, batch_size = get_dataset(args.train_dataset,eval_train=True)
             train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+            test_dataset, batch_size = get_dataset(args.train_dataset,eval_train=False)
+            test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
-            logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
+            logging.error(f"Failed to load training/test dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
         
         try:
@@ -108,7 +110,7 @@ def main():
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")
         
-        computed_model, actual_epochs = train(model=model, train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
+        computed_model, actual_epochs = train(model=model,test_loader=test_loader,train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
         args.num_epochs = actual_epochs
 
 
@@ -152,7 +154,7 @@ def main():
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
-            cos_sim_dataset, batch_size = get_dataset(args.cs_dataset,eval_train=False)
+            cos_sim_dataset, batch_size = get_dataset(args.cs_dataset,eval_train=True)
             cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load cos_sim dataset. Check if dataset is specified correctly. Error: {e}")

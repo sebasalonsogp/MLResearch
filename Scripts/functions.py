@@ -9,12 +9,14 @@ from matplotlib import cm
 import pandas,json,os
 
 
-def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=None, device=None):
+def train(model=None,train_loader=None,test_loader=None, cost=None, optimizer=None, num_epochs=None, device=None):
 
     if model is None:
         raise ValueError("Model is not defined")
     elif train_loader is None:
         raise ValueError("Dataset is not defined")
+    elif test_loader is None:
+        raise ValueError("Test dataset is not defined")
     elif cost is None:
         raise ValueError("Cost function is not defined")
     elif optimizer is None:
@@ -29,13 +31,15 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
     
     model = model.to(device)
 
-    total_step = len(train_loader)
+    # total_step = len(train_loader)
 
-    lowest_loss = float('inf')
+    # lowest_loss = float('inf')
     best_model = None
+    best_test_accuracy=0
     actual_epoch = num_epochs
 
     for epoch in range(num_epochs):
+        model.train()
         curr_loss = 0.0
         for i, (images, labels) in enumerate(train_loader):
             
@@ -55,15 +59,31 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
             
             curr_loss += loss.item()
 
+        model.eval()
+        with torch.no_grad():
+            correct,total=0,0
+            for images,labels in test_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+                _, outputs = model(images)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+            test_accuracy = 100 * correct / total
+            if test_accuracy > best_test_accuracy:
+                best_test_accuracy = test_accuracy
+                best_model = model.state_dict()
+    
+
             #if (i + 1) % 100 == 0:
                 #print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
-        avg_loss = curr_loss / len(train_loader)        
-        if avg_loss < lowest_loss:
-            print(f"Loss decreased from {lowest_loss} to {avg_loss}. Saving the current best model...")
-            lowest_loss = avg_loss
-            actual_epoch = epoch
-            best_model = model.state_dict()
+        # avg_loss = curr_loss / len(train_loader)        
+        # if avg_loss < lowest_loss:
+        #     print(f"Loss decreased from {lowest_loss} to {avg_loss}. Saving the current best model...")
+        #     lowest_loss = avg_loss
+        #     actual_epoch = epoch
+        #     best_model = model.state_dict()
         
     return best_model, actual_epoch+1 
 
