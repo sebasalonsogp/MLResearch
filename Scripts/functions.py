@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import pandas,json,os
 
 
 def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=None, device=None):
@@ -54,8 +55,8 @@ def train(model=None,train_loader=None, cost=None, optimizer=None, num_epochs=No
             
             curr_loss += loss.item()
 
-            if (i + 1) % 100 == 0:
-                print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
+            #if (i + 1) % 100 == 0:
+                #print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch + 1, num_epochs, i + 1, total_step, loss.item()))
 
         avg_loss = curr_loss / len(train_loader)        
         if avg_loss < lowest_loss:
@@ -367,21 +368,20 @@ def aggregated_hist(cos_sim_matrix_np,title="Aggregated Cosine Similarity Histog
     #all_intra_sim = np.array([sim for class_id in cos_sim_matrix_np for sim in cos_sim_matrix_np[class_id]['intra_sim']])
     colors_intra = cm.get_cmap('Blues', len(cos_sim_matrix_np))
     for i, class_id in enumerate(cos_sim_matrix_np):
-        axs[0].hist(cos_sim_matrix_np[class_id]['intra_sim'], bins=50, color=colors_intra(i), edgecolor='black', alpha=0.5, histtype=histtype, label=f"Class {class_id}")
+        axs[0].hist(cos_sim_matrix_np[class_id]['intra_sim'], bins=50, color=colors_intra(i), edgecolor=colors_intra(i), alpha=0.5, histtype=histtype)
     axs[0].set_title(f"Intra-class similarity")
     axs[0].set_xlabel("cosine similarity")
     axs[0].set_ylabel("Frequency")
-    axs[0].legend()
+
 
     # Inter-class similarity
     #all_inter_sim = np.array([sim for class_id in cos_sim_matrix_np for sim in cos_sim_matrix_np[class_id]['inter_sim']])
     colors_inter = cm.get_cmap('Reds', len(cos_sim_matrix_np))
     for j, class_id in enumerate(cos_sim_matrix_np):
-        axs[1].hist(cos_sim_matrix_np[class_id]['inter_sim'], bins=50, color=colors_inter(j), edgecolor='black', alpha=0.5, histtype='step', label=f"Class {class_id}")
+        axs[1].hist(cos_sim_matrix_np[class_id]['inter_sim'], bins=50, color=colors_inter(j), edgecolor=colors_inter(j), alpha=0.5, histtype=histtype)
     axs[1].set_title(f"Inter-class similarity")
     axs[1].set_xlabel("cosine similarity")
     axs[1].set_ylabel("Frequency")
-    axs[1].legend()
 
     # Show the figure
     plt.show()
@@ -392,8 +392,8 @@ def get_stats_class(cos_sim_matrix_np):
         print(f"Class {class_id}:\nIntra-class Similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['intra_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['intra_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['intra_sim'])}\nInter-class similarity: Mean = {np.mean(cos_sim_matrix_np[class_id]['inter_sim'])}, Std = {np.std(cos_sim_matrix_np[class_id]['inter_sim'])}, Var = {np.var(cos_sim_matrix_np[class_id]['inter_sim'])}\n")
 
 def get_stats_agg(cos_sim_matrix_np):
-    intra_sim_all = []
-    inter_sim_all = []
+    
+    intra_sim_all,inter_sim_all = [], []
 
     for class_id in cos_sim_matrix_np:
         intra_sim_all.extend(cos_sim_matrix_np[class_id]['intra_sim'])
@@ -408,3 +408,34 @@ def get_stats_agg(cos_sim_matrix_np):
     var_inter_sim = np.var(inter_sim_all)
 
     print(f"Overall Statistics:\nIntra-class Similarity: Mean = {mean_intra_sim}, Std = {std_intra_sim}, Var = {var_intra_sim}\nInter-class similarity: Mean = {mean_inter_sim}, Std = {std_inter_sim}, Var = {var_inter_sim}\n")
+
+    mean_intra_sim = round(mean_intra_sim, 4)
+    std_intra_sim = round(std_intra_sim, 4)
+    mean_inter_sim = round(mean_inter_sim, 4)
+    std_inter_sim = round(std_inter_sim, 4)
+    return mean_intra_sim, std_intra_sim, mean_inter_sim, std_intra_sim
+
+def report_results(model=None,train_set=None,eval_set=None,train_acc='None',test_acc='None',intra_μ=None,intra_σ=None,inter_μ=None,inter_σ=None, adj_intra_μ=None, adj_intra_σ=None, adj_inter_μ=None, adj_inter_σ=None):
+    data = {
+        'Architecture': [model],
+        'Training_Set': [train_set],
+        'Evaluation_Set': [eval_set],
+        'Train_Accuracy': [train_acc],
+        'Test_Accuracy': [test_acc],
+        'Class_Avg_Intra-Mean': [intra_μ],
+        'Class_Avg_Intra-Std': [intra_σ],
+        'Class_Avg_Inter-Mean': [inter_μ],
+        'Class_Avg_Inter-Std': [inter_σ],
+        'Class_Avg_Adjusted_Intra-Mean': [adj_intra_μ],
+        'Class_Avg_Adjusted_Intra-Std': [adj_intra_σ],
+        'Class_Avg_Adjusted_Inter-Mean': [adj_inter_μ],
+        'Class_Avg_Adjusted_Inter-Std': [adj_inter_σ]
+    }
+
+    df = pandas.DataFrame(data)
+
+    df.to_csv(f'final_results.txt', sep='\t', index=False, mode='a',header= (not os.path.exists(f'final_results.txt')))
+
+def get_acc(info_path):
+    #TODO
+    pandas.read_csv(info_path, sep='\t')

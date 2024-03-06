@@ -30,6 +30,7 @@ def main():
     parser.add_argument('--l2', action='store_true', default=False, help='Compute L2 distance?')
     parser.add_argument('--cos_sim_adj', action='store_true', default=False, help='Compute mean-adjusted cosine similarity?')
     parser.add_argument('--load_model_train', action='store_true', default=False, help='Load model and continue train?')
+    parser.add_argument('--eval_train', action='store_true', default=False, help='Evaluate on training set?')
 
     args = parser.parse_args()
 
@@ -51,7 +52,7 @@ def main():
     logging.basicConfig(filename=f'{result_path}/error.log', level=logging.ERROR,format='%(asctime)s:%(levelname)s:%(message)s')
 
 
-    if args.execution_id:
+    if args.execution_id: ##NOTE: Only use if u wish to recompute something otherwise it will overwrite data!
         try:
             with open(f'{model_path}/{args.execution_id}/results.json', 'r') as file:
                 data = json.load(file)
@@ -133,6 +134,7 @@ def main():
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
 
+        print(f"Testing model on {args.test_dataset} dataset...")
         accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
 
     if args.cos_sim:
@@ -281,11 +283,11 @@ def get_dataset(args):
     batch_size = None
     if args == 'cifar10':
         batch_size = 128
-        dataset = datasets.CIFAR10(root='./Notebooks/data', train=True, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
+        dataset = datasets.CIFAR10(root='./Notebooks/data', train=args.eval_train, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
                                                                                                       transforms.Normalize((.5071,.4865,.4409), (.2675,.2565,.2761))]), download=True)
     elif args == 'cifar100':
         batch_size = 128
-        dataset = datasets.CIFAR100(root='./Notebooks/data', train=True, transform=transforms.Compose([transforms.RandomCrop(32, padding=4),
+        dataset = datasets.CIFAR100(root='./Notebooks/data', train=args.eval_train, transform=transforms.Compose([transforms.RandomCrop(32, padding=4),
                                                                                                        transforms.RandomHorizontalFlip(),
                                                                                                        transforms.ToTensor(),
                                                                                                        transforms.Normalize((0.5071, 0.4865, 0.4409), (0.2675, 0.2565, 0.2761))]),
@@ -296,10 +298,10 @@ def get_dataset(args):
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
-        dataset = datasets.MNIST(root='./Notebooks/data', train=True, transform=transform, download=True)
+        dataset = datasets.MNIST(root='./Notebooks/data', train=args.eval_train, transform=transform, download=True)
     elif args == 'fashion_mnist':
         batch_size = 64
-        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=True, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=args.eval_train, transform=transforms.ToTensor(), download=True)
     else:
         raise ValueError('Dataset not recognized')
     return dataset, batch_size

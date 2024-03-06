@@ -3,3 +3,5 @@ Notebooks/data/
 Scripts/__pycache__/
 nohup.out
 results/
+graphs/
+final_results.txt
