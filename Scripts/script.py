@@ -124,15 +124,14 @@ def main():
         training_settings = {'model': args.model, 'train_dataset': args.train_dataset, 'num_epochs': args.num_epochs, 'optimizer': 'SGD', 'loss_function': 'CrossEntropyLoss', 'learning_rate': 0.001, 'batch_size': batch_size, 'weight_decay': 0, 'entry_stride': 1, 'layer_norm': 'False', 'proto_layer': 4, 'scale': 64 if args.model=='resnet18' else 32, 'channels': '3' if args.train_dataset=='cifar10' or args.train_dataset=='cifar100' else '1'}
         with open(f'{result_path}/training_settings.json', 'w') as file:
             json.dump(training_settings, file)
-        torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
-        train_accuracy = eval(model=computed_model, eval_dataloader=train_loader, device=device)
-
         
-    
-   
+        print("Computing training accuracy")
+        train_accuracy = eval(model=computed_model, eval_dataloader=train_loader, device=device)
+        print(f"Training function done.")
+        torch.save(computed_model.state_dict(), f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
+
 
     if args.test:
-        
         try:
             model.load_state_dict(
                 torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
@@ -151,6 +150,7 @@ def main():
 
         print(f"Testing model on {args.test_dataset} dataset...")
         test_accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
+        return model
 
     if args.cos_sim:
     

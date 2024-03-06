@@ -72,7 +72,7 @@ def train(model=None,train_loader=None,test_loader=None, cost=None, optimizer=No
             test_accuracy = 100 * correct / total
             if test_accuracy > best_test_accuracy:
                 best_test_accuracy = test_accuracy
-                best_model = model.state_dict()
+                best_model = model
     
 
             #if (i + 1) % 100 == 0:
