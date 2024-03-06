@@ -99,7 +99,7 @@ def main():
         try:
             train_dataset, batch_size = get_dataset(args.train_dataset,eval_train=True)
             train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
-            
+
             test_dataset, batch_size = get_dataset(args.train_dataset,eval_train=False)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
@@ -117,7 +117,7 @@ def main():
             raise e("Model not found")
         
         computed_model, actual_epochs = train(model=model,test_loader=test_loader,train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
-        train_accuracy = eval(model=computed_model, eval_dataloader=train_loader, device=device)
+        
         args.num_epochs = actual_epochs
 
 
@@ -125,6 +125,7 @@ def main():
         with open(f'{result_path}/training_settings.json', 'w') as file:
             json.dump(training_settings, file)
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
+        train_accuracy = eval(model=computed_model, eval_dataloader=train_loader, device=device)
 
         
     
