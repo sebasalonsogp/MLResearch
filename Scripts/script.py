@@ -79,6 +79,8 @@ def main():
     model = get_model(args, nclass,nchannels)
     
 
+    ##TODO adjust code such that train function automatically computes training accuracy and test function automatically uses test accuracy
+
     if args.train:
         try:
             os.makedirs(f'./results/{args.model}/{args.train_dataset}', exist_ok=True)
@@ -114,6 +116,8 @@ def main():
         with open(f'{result_path}/training_settings.json', 'w') as file:
             json.dump(training_settings, file)
         torch.save(computed_model, f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
+
+        
     
     accuracy = None
 
@@ -128,7 +132,7 @@ def main():
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
-            test_dataset, batch_size = get_dataset(args.train_dataset,eval_train=args.eval_train)
+            test_dataset, batch_size = get_dataset(args.test_dataset,eval_train=args.eval_train)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
@@ -148,7 +152,7 @@ def main():
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
-            cos_sim_dataset, batch_size = get_dataset(args.cs_dataset)
+            cos_sim_dataset, batch_size = get_dataset(args.cs_dataset,eval_train=False)
             cos_sim_loader = torch.utils.data.DataLoader(dataset=cos_sim_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.error(f"Failed to load cos_sim dataset. Check if dataset is specified correctly. Error: {e}")
