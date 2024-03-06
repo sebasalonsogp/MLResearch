@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--l2', action='store_true', default=False, help='Compute L2 distance?')
     parser.add_argument('--cos_sim_adj', action='store_true', default=False, help='Compute mean-adjusted cosine similarity?')
     parser.add_argument('--load_model_train', action='store_true', default=False, help='Load model and continue train?')
-    parser.add_argument('--eval_train', action='store_true', default=False, help='Evaluate on training set?')
+    
 
     args = parser.parse_args()
 
@@ -65,6 +65,8 @@ def main():
         'Start Time': start_time,
         'End Time': None,
         'Elapsed Time': None,
+        'Training Accuracy': None,
+        'Test Accuracy': None,
         'cosine_similarity': None,
         'adj_cos_sim': None,
         'L2_distance': None
@@ -81,6 +83,9 @@ def main():
 
     ##TODO adjust code such that train function automatically computes training accuracy and test function automatically uses test accuracy
 
+
+    test_accuracy, train_accuracy = None,None
+    
     if args.train:
         try:
             os.makedirs(f'./results/{args.model}/{args.train_dataset}', exist_ok=True)
@@ -94,6 +99,7 @@ def main():
         try:
             train_dataset, batch_size = get_dataset(args.train_dataset,eval_train=True)
             train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
+            
             test_dataset, batch_size = get_dataset(args.train_dataset,eval_train=False)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
@@ -111,6 +117,7 @@ def main():
             raise e("Model not found")
         
         computed_model, actual_epochs = train(model=model,test_loader=test_loader,train_loader=train_loader, cost=cost, optimizer=optimizer, num_epochs=args.num_epochs, device=device)
+        train_accuracy = eval(model=computed_model, eval_dataloader=train_loader, device=device)
         args.num_epochs = actual_epochs
 
 
@@ -121,7 +128,7 @@ def main():
 
         
     
-    accuracy = None
+   
 
     if args.test:
         
@@ -134,14 +141,14 @@ def main():
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
-            test_dataset, batch_size = get_dataset(args.test_dataset,eval_train=args.eval_train)
+            test_dataset, batch_size = get_dataset(args.test_dataset,eval_train=False)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
             raise e("Dataset not found")
 
         print(f"Testing model on {args.test_dataset} dataset...")
-        accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
+        test_accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
 
     if args.cos_sim:
     
@@ -205,7 +212,12 @@ def main():
     elapsed_time = str(datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S") - datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"))
     data['End Time'], data['Elapsed Time'] = end_time, elapsed_time
 
-    save_results(data, args, training_settings=training_settings,accuracy=accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
+    if args.train:
+        data['Training Accuracy'] = train_accuracy
+    if args.test:
+        data['Test Accuracy'] = test_accuracy
+
+    save_results(data, args, training_settings=training_settings,test_accuracy=test_accuracy,train_accuracy=train_accuracy,elapsed_time=elapsed_time, result_path=result_path, execution_id=execution_id)
 
     print(f"Finished running script at {end_time}.\nTotal time elapsed: {elapsed_time}")
 
@@ -213,7 +225,7 @@ def main():
     return execution_id
 
 
-def save_results(data, args,training_settings=None, elapsed_time=None,result_path=None, execution_id=None, accuracy=None):
+def save_results(data, args,training_settings=None, elapsed_time=None,result_path=None, execution_id=None, test_accuracy=None,train_accuracy=None):
     print("Saving results...")
     
     if data:
@@ -246,8 +258,10 @@ def save_results(data, args,training_settings=None, elapsed_time=None,result_pat
                 formatted_training_settings = json.dumps(training_settings, indent=4)
                 file.write(f"Training settings: {formatted_training_settings}\n")
                 file.write(f"Saved Model: model_{args.model}_{args.train_dataset}\n")
+                file.write(f'Training accuracy: {train_accuracy}\n' if train_accuracy else "No training accuracy computed.\n")
             if args.test:
-                file.write(f"Tested model on dataset {args.test_dataset} with {('Training' if args.train_dataset == args.test_dataset else 'Test')} accuracy {accuracy:.2f}%.\n")
+                file.write(f"Tested model on dataset {args.test_dataset}.\n")
+                file.write(f'Test accuracy: {test_accuracy}\n' if test_accuracy else "No test accuracy computed.\n")
             if args.cos_sim:
                 file.write(f"Calculated cosine similarity on dataset {args.cs_dataset}.\n")
             if args.cos_sim_adj:

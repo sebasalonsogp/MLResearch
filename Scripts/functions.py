@@ -433,7 +433,7 @@ def get_stats_agg(cos_sim_matrix_np):
     std_intra_sim = round(std_intra_sim, 4)
     mean_inter_sim = round(mean_inter_sim, 4)
     std_inter_sim = round(std_inter_sim, 4)
-    return mean_intra_sim, std_intra_sim, mean_inter_sim, std_intra_sim
+    return mean_intra_sim, std_intra_sim, mean_inter_sim, std_inter_sim
 
 def report_results(model=None,train_set=None,eval_set=None,train_acc='None',test_acc='None',intra_μ=None,intra_σ=None,inter_μ=None,inter_σ=None, adj_intra_μ=None, adj_intra_σ=None, adj_inter_μ=None, adj_inter_σ=None):
     data = {
