@@ -137,6 +137,7 @@ def main():
             model.load_state_dict(
                 torch.load(f'{model_path}/model_{args.model}_{args.train_dataset}.pth')
                 )
+            print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         except ValueError as e: 
             logging.error(f"Failed to load model. Check if model is specified correctly. Error: {e}")
             raise e("Model not found")

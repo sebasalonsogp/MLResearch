@@ -288,8 +288,9 @@ def eval(model=None, eval_dataloader=None, device=None):
 
     print(f"Evaluating the model...")
 
-    model.eval()
+    
     model.to(device)
+    model.eval()
     with torch.no_grad():
 
         feature_vectors, labels_list = [], []
