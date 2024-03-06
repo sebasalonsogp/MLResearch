@@ -90,7 +90,7 @@ def main():
         cost = nn.CrossEntropyLoss()
 
         try:
-            train_dataset, batch_size = get_dataset(args.train_dataset)
+            train_dataset, batch_size = get_dataset(args.train_dataset,eval_train=True)
             train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=True)
         except ValueError as e:
             logging.error(f"Failed to load training dataset. Check if dataset is specified correctly. Error: {e}")
@@ -128,7 +128,7 @@ def main():
             raise e("Model not found")
         print(f'Loaded model_{args.model}_{args.train_dataset}.pth')
         try:
-            test_dataset, batch_size = get_dataset(args.test_dataset)
+            test_dataset, batch_size = get_dataset(args.train_dataset,eval_train=args.eval_train)
             test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False)
         except ValueError as e:
             logging.log(f"Failed to load test dataset. Check if dataset is specified correctly. Error: {e}")
@@ -279,15 +279,15 @@ def get_model(args,nclass,channels):
         raise ValueError('Unrecognized model not implemented yet')
     return model
 
-def get_dataset(args):
+def get_dataset(args,eval_train=False):
     batch_size = None
     if args == 'cifar10':
         batch_size = 128
-        dataset = datasets.CIFAR10(root='./Notebooks/data', train=args.eval_train, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
+        dataset = datasets.CIFAR10(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor(),
                                                                                                       transforms.Normalize((.5071,.4865,.4409), (.2675,.2565,.2761))]), download=True)
     elif args == 'cifar100':
         batch_size = 128
-        dataset = datasets.CIFAR100(root='./Notebooks/data', train=args.eval_train, transform=transforms.Compose([transforms.RandomCrop(32, padding=4),
+        dataset = datasets.CIFAR100(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([transforms.RandomCrop(32, padding=4),
                                                                                                        transforms.RandomHorizontalFlip(),
                                                                                                        transforms.ToTensor(),
                                                                                                        transforms.Normalize((0.5071, 0.4865, 0.4409), (0.2675, 0.2565, 0.2761))]),
@@ -298,10 +298,10 @@ def get_dataset(args):
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
-        dataset = datasets.MNIST(root='./Notebooks/data', train=args.eval_train, transform=transform, download=True)
+        dataset = datasets.MNIST(root='./Notebooks/data', train=eval_train, transform=transform, download=True)
     elif args == 'fashion_mnist':
         batch_size = 64
-        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=args.eval_train, transform=transforms.ToTensor(), download=True)
+        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=eval_train, transform=transforms.ToTensor(), download=True)
     else:
         raise ValueError('Dataset not recognized')
     return dataset, batch_size
