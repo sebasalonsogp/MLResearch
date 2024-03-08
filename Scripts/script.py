@@ -150,7 +150,7 @@ def main():
 
         print(f"Testing model on {args.test_dataset} dataset...")
         test_accuracy = eval(model=model, eval_dataloader=test_loader, device=device)
-        return model
+        
 
     if args.cos_sim:
     
