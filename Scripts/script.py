@@ -319,13 +319,17 @@ def get_dataset(args,eval_train=False):
     elif args == 'mnist':
         batch_size = 64
         transform = transforms.Compose([
+            transforms.Pad(2),
             transforms.ToTensor(),
             transforms.Normalize((0.5,), (0.5,))
         ])
         dataset = datasets.MNIST(root='./Notebooks/data', train=eval_train, transform=transform, download=True)
     elif args == 'fashion_mnist':
         batch_size = 64
-        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([transforms.RandomHorizontalFlip(),transforms.ToTensor()]), download=True)
+        dataset = datasets.FashionMNIST(root='./Notebooks/data', train=eval_train, transform=transforms.Compose([
+            transforms.Pad(2),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor()]), download=True)
     else:
         raise ValueError('Dataset not recognized')
     return dataset, batch_size
